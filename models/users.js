@@ -1,23 +1,10 @@
 var Q = require('q');
 var r = require('rethinkdb');
 var R = require('ramda');
+var Database = require('../database/database');
 
-module.exports.setup = function(conn, config) {
-  var deferred = Q.defer();
-
-  var containsOrCreate = function(containsTable) {
-    return r.branch(
-      containsTable,
-      { created: 0 },
-      r.tableCreate('users')
-    );
-  };
-
-  r.tableList().contains('users')
-    .do(containsOrCreate)
-    .run(conn, deferred.makeNodeResolver());
-
-  return deferred.promise;
+module.exports.setup = function(conn) {
+  return Database.containsOrCreateTable(conn, 'users');
 };
 
 module.exports.all = function(conn) {
@@ -26,7 +13,7 @@ module.exports.all = function(conn) {
   r.table('users').run(conn, function(err, cursor) {
     if (err)
       return deferred.reject(err);
-    
+
     cursor.toArray(deferred.makeNodeResolver());
   });
 
@@ -43,7 +30,6 @@ module.exports.insert = function(conn, params) {
     return Q.reject('password is required!');
 
   var deferred = Q.defer();
-  var createFromParams = insert.bind(this, null, conn, params);
 
   findByParams(conn, { username: params.username })
     .then(function(users) {
@@ -52,7 +38,9 @@ module.exports.insert = function(conn, params) {
     .then(function(user) {
       deferred.reject('username already registered');
     })
-    .catch(createFromParams)
+    .catch(function() {
+      return insert(conn, params);
+    })
     .then(function(user) {
       deferred.resolve(user);
     })
@@ -66,12 +54,18 @@ module.exports.insert = function(conn, params) {
 module.exports.findByParams = findByParams;
 
 function findByParams(conn, params) {
-  var deferred = Q.defer();
+  return Q.Promise(function(resolve) {
+    var query = r.table('users').filter(params);
+    query.run(conn, function(err, cursor) {
+      if (err) throw err;
 
-  var query = r.table('users').filter(params);
-  query.run(conn, deferred.makeNodeResolver());
+      cursor.toArray(function(err, users) {
+        if (err) throw err;
 
-  return deferred.promise;
+        resolve(users);
+      });
+    });
+  });
 }
 
 function insert(conn, params) {

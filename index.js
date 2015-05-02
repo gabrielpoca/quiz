@@ -8,17 +8,24 @@ var R = require('ramda');
 var app = express();
 var config = require(__dirname + '/config.js');
 
-var Database = require('./database');
-var Users = require('./users');
+var Database = require('./database/database');
+var Seed = require('./database/seed');
+
+var Users = require('./models/users');
+var Questions = require('./models/questions');
+var Answers = require('./models/answers');
+
+var Game = require('./game');
 
 passport.use(new BasicStrategy({}, function(username, password, done) {
   var params = { username: username };
 
   Users.findByParams(app._rdbConn, params)
     .then(function(users) {
-      return users.next().then(function(user) {
-        done(null, user);
-      });
+      if (users.length !== 0)
+        done(null, users[0]);
+      else
+        throw 'not authorized';
     })
     .catch(function(err) {
       done({ message: 'you are not authorized' });
@@ -35,24 +42,19 @@ app.post('/register', function(req, res) {
       res.json(user);
     })
     .catch(function(err) {
-      res.status(500).send({ error: err });
+      res.status(500).json({ error: err });
     });
 });
 
 app.get('/me', passport.authenticate('basic', { session: false }),
   function(req, res) {
-    Users.insert(req.app._rdbConn, req.body)
-      .then(function(user) {
-        res.json(user);
-      })
-      .catch(function(err) {
-        res.status(500).send({ error: err });
-      });
-  });
+    res.json(req.user);
+  }
+);
 
 app.get('/users',
   passport.authenticate('basic', { session: false }),
-  function(req, res, next) {
+  function(req, res) {
     Users.all(req.app._rdbConn)
       .then(function(users) {
         res.json(users);
@@ -60,7 +62,41 @@ app.get('/users',
       .catch(function() {
         res.status(500);
       });
-  });
+  }
+);
+
+app.get('/questions/current',
+  passport.authenticate('basic', { session: false }),
+  function(req, res) {
+    Questions.all(req.app._rdbConn)
+      .then(function(questions) {
+        res.json(questions[0]);
+      })
+      .catch(function(err) {
+        res.status(500).json({ message: err });
+      });
+  }
+);
+
+app.post('/answers',
+  passport.authenticate('basic', { session: false }),
+  function(req, res) {
+    Game.saveAnswer(
+      req.app._rdbConn,
+      req.user.id,
+      req.body.questionId,
+      req.body.answerId
+    )
+      .then(function(answer) {
+        console.log('answer', answer);
+        res.json(answer);
+      })
+      .catch(function(err) {
+        console.log('err', err);
+        res.status(500).json({ message: err });
+      });
+  }
+);
 
 
 app.use(handle404);
@@ -68,6 +104,10 @@ app.use(handleError);
 
 Database.setup(config.rethinkdb)
   .tap(Users.setup)
+  .tap(Questions.setup)
+  .tap(Answers.setup)
+  .tap(Seed.run)
+  .tap(Game.setup)
   .then(startExpress)
   .catch(function(err) {
     console.error(err);

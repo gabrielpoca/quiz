@@ -26,3 +26,21 @@ module.exports.setup = function(config) {
 
   return deferred.promise;
 };
+
+module.exports.containsOrCreateTable = function(conn, tableName) {
+  var deferred = Q.defer();
+
+  var containsOrCreate = function(containsTable) {
+    return r.branch(
+      containsTable,
+      { created: 0 },
+      r.tableCreate(tableName)
+    );
+  };
+
+  r.tableList().contains(tableName)
+    .do(containsOrCreate)
+    .run(conn, deferred.makeNodeResolver());
+
+  return deferred.promise;
+};
