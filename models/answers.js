@@ -3,56 +3,63 @@ var r = require('rethinkdb');
 var R = require('ramda');
 var Database = require('../database/database');
 
-module.exports.setup = function(conn) {
-  return Database.containsOrCreateTable(conn, 'answers');
-};
+module.exports = function(conn) {
+  return {
+    setup: setup,
+    insert: insert,
+    update: update,
+    findByParams: findByParams,
+  };
 
-module.exports.insert = function(conn, params) {
-  params = R.pick(['answerId', 'questionId', 'userId'], params);
+  function setup() {
+    return Database.containsOrCreateTable(conn, 'answers');
+  }
 
-  return insert(conn, params);
-};
+  function insert(params) {
+    params = R.pick(['answerId', 'questionId', 'userId'], params);
 
-module.exports.update = function(conn, id, params) {
-  return Q.Promise(function(resolve) {
-    var query = r.table('answers').get(id)
-      .update(params, { returnChanges: true });
-    query.run(conn, function(err, res) {
-      if (err) throw err;
+    return insert(conn, params);
+  }
 
-      console.log(res);
-
-      resolve(params);
-    });
-  });
-};
-
-module.exports.findByParams = findByParams;
-
-function findByParams(conn, params) {
-  return Q.Promise(function(resolve) {
-    var query = r.table('answers').filter(params);
-    query.run(conn, function(err, cursor) {
-      if (err) throw err;
-
-      cursor.toArray(function(err, users) {
+  function update(id, params) {
+    return Q.Promise(function(resolve) {
+      var query = r.table('answers').get(id)
+        .update(params, { returnChanges: true });
+      query.run(conn, function(err, res) {
         if (err) throw err;
 
-        resolve(users);
+        console.log(res);
+
+        resolve(params);
       });
     });
-  });
-}
+  }
 
-function insert(conn, params) {
-  return Q.Promise(function(resolve) {
-    var query = r.table('answers').insert(params, { returnChanges: true });
+  function findByParams(params) {
+    return Q.Promise(function(resolve) {
+      var query = r.table('answers').filter(params);
+      query.run(conn, function(err, cursor) {
+        if (err) throw err;
 
-    query.run(conn, function(err, result) {
-      if (err)
-        throw err;
+        cursor.toArray(function(err, users) {
+          if (err) throw err;
 
-      resolve(result.changes[0].new_val);
+          resolve(users);
+        });
+      });
     });
-  });
-}
+  }
+
+  function insert(params) {
+    return Q.Promise(function(resolve) {
+      var query = r.table('answers').insert(params, { returnChanges: true });
+
+      query.run(conn, function(err, result) {
+        if (err)
+          throw err;
+
+        resolve(result.changes[0].new_val);
+      });
+    });
+  }
+};

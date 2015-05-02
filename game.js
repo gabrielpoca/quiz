@@ -1,12 +1,12 @@
 var Q = require('q');
 var R = require('ramda');
-var Questions = require('./models/questions');
-var Answers = require('./models/answers');
+var QuestionsModel = require('./models/questions');
+var AnswersModel = require('./models/answers');
 
 var current;
 
 module.exports.setup = function(conn) {
-  Questions.all(conn)
+  QuestionsModel(conn).all()
     .then(function(questions) {
       current = questions[0];
     });
@@ -25,12 +25,12 @@ module.exports.saveAnswer = function(conn, userId, questionId, answerId) {
     questionId: questionId
   };
 
-  return Answers.findByParams(conn, R.omit(['answerId'], params))
+  return AnswersModel(conn).findByParams(R.omit(['answerId'], params))
     .then(function(answers) {
       if (answers.length === 0) {
-        return Answers.insert(conn, params);
+        return AnswersModel(conn).insert(params);
       } else {
-        return Answers.update(conn, answers[0].id, params);
+        return AnswersModel(conn).update(answers[0].id, params);
       }
     });
 };

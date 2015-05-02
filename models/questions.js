@@ -3,35 +3,43 @@ var r = require('rethinkdb');
 var R = require('ramda');
 var Database = require('../database/database');
 
-module.exports.setup = function(conn) {
-  return Database.containsOrCreateTable(conn, 'questions');
-};
+module.exports = function(conn) {
+  return {
+    all: all,
+    setup: setup,
+    insert: insert
+  };
 
-module.exports.all = function(conn) {
-  return Q.Promise(function(resolve) {
-    r.table('questions').run(conn, function(err, cursor) {
-      if (err) throw err;
+  function setup() {
+    return Database.containsOrCreateTable(conn, 'questions');
+  }
 
-      cursor.toArray(function(err, questions) {
+  function all() {
+    return Q.Promise(function(resolve) {
+      r.table('questions').run(conn, function(err, cursor) {
         if (err) throw err;
 
-        resolve(questions);
+        cursor.toArray(function(err, questions) {
+          if (err) throw err;
+
+          resolve(questions);
+        });
       });
     });
-  });
-};
+  }
 
-module.exports.insert = function(conn, params) {
-  params = R.pick(['body', 'answerId', 'answers'], params);
+  function insert(params) {
+    params = R.pick(['body', 'answerId', 'answers'], params);
 
-  return Q.Promise(function(resolve) {
-    var query = r.table('questions').insert(params, { returnChanges: true });
+    return Q.Promise(function(resolve) {
+      var query = r.table('questions').insert(params, { returnChanges: true });
 
-    query.run(conn, function(err, result) {
-      if (err)
-        throw err;
+      query.run(conn, function(err, result) {
+        if (err)
+          throw err;
 
-      resolve(result.changes[0].new_val);
+        resolve(result.changes[0].new_val);
+      });
     });
-  });
+  }
 };

@@ -1,5 +1,5 @@
 var R = require('ramda');
-var Questions = require('../models/questions');
+var QuestionsModel = require('../models/questions');
 
 module.exports.run = function(conn) {
   var questionsList = [
@@ -20,11 +20,11 @@ module.exports.run = function(conn) {
   ];
 
 
-  Questions.all(conn)
+  QuestionsModel(conn).all()
     .then(function(res) {
       if (! R.isEmpty(res)) return;
       console.log(res);
 
-      R.forEach(R.curry(Questions.insert)(conn), questionsList);
+      R.forEach(QuestionsModel(conn).insert, questionsList);
     });
 };
