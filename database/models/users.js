@@ -11,6 +11,7 @@ module.exports = function(conn) {
     initialize: initialize,
     insert: validateInsert,
     sample: sample,
+    incScore: incScore
   };
 
   function initialize() {
@@ -36,6 +37,20 @@ module.exports = function(conn) {
 
       cursor.toArray(deferred.makeNodeResolver());
     });
+
+    return deferred.promise;
+  }
+
+  function incScore(userId) {
+    var deferred = Q.defer();
+
+    var query = r.table('users')
+      .get(userId)
+      .update({
+        score: r.row('score').add(1).default(0)
+      });
+
+    query.run(conn, deferred.makeNodeResolver());
 
     return deferred.promise;
   }

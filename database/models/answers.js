@@ -38,10 +38,9 @@ module.exports = function(conn) {
     return Q.Promise(function(resolve) {
       var query = r.table('answers').get(id)
         .update(params, { returnChanges: true });
+
       query.run(conn, function(err, res) {
         if (err) throw err;
-
-        console.log(res);
 
         resolve(params);
       });
@@ -50,7 +49,11 @@ module.exports = function(conn) {
 
   function findByParams(params) {
     return Q.Promise(function(resolve) {
-      var query = r.table('answers').filter(params);
+      var query = r.table('answers')
+        .filter(params)
+        .eqJoin('userId', r.table('users'))
+        .zip();
+
       query.run(conn, function(err, cursor) {
         if (err) throw err;
 

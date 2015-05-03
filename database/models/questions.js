@@ -20,7 +20,8 @@ module.exports = function(conn) {
     var defer = Q.defer();
 
     num = num || 1;
-    r.table('questions').sample(num).run(conn, defer.makeNodeResolver());
+    var query = r.table('questions').sample(num)
+    query.run(conn, defer.makeNodeResolver());
 
     return defer.promise;
   }

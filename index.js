@@ -1,11 +1,11 @@
-var app = require('./app');
-var config = require(__dirname + '/config.js');
+var config = require('./config.js');
 
+var App = require('./app');
 var Database = require('./database');
 var Game = require('./game');
 
 var startExpress = function(DB) {
-  app(DB).listen(config.express.port);
+  App(DB).listen(config.express.port);
   console.log('Listening on port ' + config.express.port);
 };
 
