@@ -1,29 +1,15 @@
 var Q = require('q');
 var R = require('ramda');
 
-var AnswersModel = require('./models/answers');
-var QuestionsModel = require('./models/questions');
-var UsersModel = require('./models/users');
+module.exports = function(DB) {
+  var current;
 
-var current;
-
-module.exports = function(conn) {
-  var Answers = AnswersModel(conn);
-  var Questions = QuestionsModel(conn);
-  var Users = UsersModel(conn);
-
-  return Q.all([
-    Answers.initialize(),
-    Questions.initialize(),
-    Users.initialize(),
-  ]).thenj(function() {
-    return {
-      start: start
-    };
-  });
+  return {
+    start: start
+  };
 
   function start() {
-    return Questions.sample()
+    return DB.Questions.sample()
       .then(function(cursor) {
         return cursor.next()
           .then(setQuestion);
@@ -41,7 +27,7 @@ module.exports = function(conn) {
       .then(R.filter(R.eqProps('answerId', question.answerId)))
       .then(function(winnerAnswers) {
         console.log(R.pick(['userId'], winnerAnswers));
-        return Questions.sample()
+        return DB.Questions.sample()
           .then(function(cursor) {
             return cursor.next()
               .then(setQuestion);
@@ -59,7 +45,6 @@ module.exports = function(conn) {
   }
 
   function answersForQuestion(question) {
-    return AnswersModel(conn)
-      .findByParams({ questionId: question.id });
+    return DB.Answers.findByParams({ questionId: question.id });
   }
 };

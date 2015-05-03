@@ -1,7 +1,8 @@
 var Q = require('q');
 var r = require('rethinkdb');
 var R = require('ramda');
-var Database = require('../database/database');
+
+var utils = require('../utils');
 
 module.exports = function(conn) {
   return {
@@ -12,7 +13,7 @@ module.exports = function(conn) {
   };
 
   function initialize() {
-    return Database.containsOrCreateTable(conn, 'questions');
+    return utils.containsOrCreateTable(conn, 'questions');
   }
 
   function sample(num) {

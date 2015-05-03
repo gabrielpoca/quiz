@@ -1,7 +1,26 @@
 var Q = require('q');
 var r = require('rethinkdb');
 
-module.exports.initialize = function(config) {
+module.exports.containsOrCreateTable = function(conn, tableName) {
+  var deferred = Q.defer();
+
+  var containsOrCreate = function(containsTable) {
+    return r.branch(
+      containsTable,
+      { created: 0 },
+      r.tableCreate(tableName)
+    );
+  };
+
+  r.tableList().contains(tableName)
+    .do(containsOrCreate)
+    .run(conn, deferred.makeNodeResolver());
+
+  return deferred.promise;
+};
+
+
+module.exports.containsOrCreateDatabase = function(config) {
   var containsOrCreate = function(containsDB) {
     return r.branch(
       containsDB,
@@ -23,22 +42,4 @@ module.exports.initialize = function(config) {
         });
     });
   });
-};
-
-module.exports.containsOrCreateTable = function(conn, tableName) {
-  var deferred = Q.defer();
-
-  var containsOrCreate = function(containsTable) {
-    return r.branch(
-      containsTable,
-      { created: 0 },
-      r.tableCreate(tableName)
-    );
-  };
-
-  r.tableList().contains(tableName)
-    .do(containsOrCreate)
-    .run(conn, deferred.makeNodeResolver());
-
-  return deferred.promise;
 };

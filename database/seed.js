@@ -1,7 +1,6 @@
 var R = require('ramda');
-var QuestionsModel = require('../models/questions');
 
-module.exports.run = function(conn) {
+module.exports.run = function(Questions) {
   var questionsList = [
     {
       body: 'Whoami?',
@@ -72,10 +71,10 @@ module.exports.run = function(conn) {
   ];
 
 
-  QuestionsModel(conn).all()
+  Questions.all()
     .then(function(res) {
       if (! R.isEmpty(res)) return;
 
-      R.forEach(QuestionsModel(conn).insert, questionsList);
+      R.forEach(Questions.insert, questionsList);
     });
 };
