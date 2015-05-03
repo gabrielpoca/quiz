@@ -1,4 +1,3 @@
-var r = require('rethinkdb');
 var R = require('ramda');
 
 var app = require('./app');
@@ -12,31 +11,62 @@ var QuestionsModel = require('./models/questions');
 var AnswersModel = require('./models/answers');
 var Game = require('./game');
 
-Database.setup(config.rethinkdb)
-  .tap(function(conn) {
-    return UsersModel(conn).setup();
-  })
-  .tap(function(conn) {
-    return QuestionsModel(conn).setup();
-  })
-  .tap(function(conn) {
-    return AnswersModel(conn).setup();
-  })
+var initializeModel = R.curry(function(model, conn) {
+  return model(conn).initialize();
+});
+
+var startExpress = function(conn) {
+  app._rdbConn = conn;
+  app.listen(config.express.port);
+  console.log('Listening on port ' + config.express.port);
+};
+
+var startGame = function(conn) {
+  return QuestionsModel(conn).sample()
+    .then(function(cursor) {
+      return cursor.next()
+        .then(Game.nextQuestion);
+    })
+    .then(function() {
+      setInterval(gameLoop, 30000, conn);
+      return gameLoop(conn);
+    });
+};
+
+Database.initialize(config.rethinkdb)
+  .tap(initializeModel(UsersModel))
+  .tap(initializeModel(QuestionsModel))
+  .tap(initializeModel(AnswersModel))
   .tap(Seed.run)
-  .tap(Game.setup)
-  .then(startExpress)
+  .tap(startExpress)
+  .then(startGame)
   .catch(function(err) {
     console.error(err);
     throw err;
   });
 
-function startExpress(connection) {
-  app._rdbConn = connection;
-  app.listen(config.express.port);
-  console.log('Listening on port ' + config.express.port);
-}
-
-process.on('uncaughtException', function (er) {
+process.on('uncaughtException', function(er) {
   console.error(er.stack);
   process.exit(1);
 });
+
+function gameLoop(conn) {
+  var question = Game.currentQuestion();
+
+    answersForQuestion(conn, question)
+      .tap(console.log)
+      .then(R.filter(R.eqProps('answerId', question.answerId)))
+      .then(function(winnerAnswers) {
+        console.log(winnerAnswers);
+        return QuestionsModel(conn).sample()
+          .then(function(cursor) {
+            return cursor.next()
+              .then(Game.nextQuestion);
+          });
+    });
+}
+
+function answersForQuestion(conn, question) {
+  return AnswersModel(conn)
+    .findByParams({ questionId: question.id });
+}

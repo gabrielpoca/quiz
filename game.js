@@ -1,15 +1,15 @@
 var Q = require('q');
 var R = require('ramda');
-var QuestionsModel = require('./models/questions');
 var AnswersModel = require('./models/answers');
 
 var current;
 
-module.exports.setup = function(conn) {
-  QuestionsModel(conn).all()
-    .then(function(questions) {
-      current = questions[0];
-    });
+module.exports.nextQuestion = function(question) {
+  current = question;
+};
+
+module.exports.currentQuestion = function() {
+  return current;
 };
 
 module.exports.saveAnswer = function(conn, userId, questionId, answerId) {

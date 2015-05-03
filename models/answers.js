@@ -5,13 +5,13 @@ var Database = require('../database/database');
 
 module.exports = function(conn) {
   return {
-    setup: setup,
+    initialize: initialize,
     insert: insert,
     update: update,
     findByParams: findByParams,
   };
 
-  function setup() {
+  function initialize() {
     return Database.containsOrCreateTable(conn, 'answers');
   }
 

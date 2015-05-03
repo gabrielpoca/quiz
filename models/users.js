@@ -5,14 +5,25 @@ var Database = require('../database/database');
 
 module.exports = function(conn) {
   return {
-    setup: setup,
     all: all,
+    findByParams: findByParams,
+    initialize: initialize,
     insert: validateInsert,
-    findByParams: findByParams
+    sample: sample,
   };
 
-  function setup() {
+  function initialize() {
     return Database.containsOrCreateTable(conn, 'users');
+  }
+
+  function sample(num) {
+    var defer = Q.defer();
+
+    num = num || 1;
+    var query = r.table('users').sample(num);
+    query.run(conn, defer.makeNodeResolver());
+
+    return defer.promise;
   }
 
   function all() {
@@ -41,18 +52,16 @@ module.exports = function(conn) {
 
     findByParams({ username: params.username })
       .then(function(users) {
-        return users.next();
-      })
-      .then(function(user) {
-        deferred.reject('username already registered');
-      })
-      .catch(function() {
-        return insert(conn, params);
+        if (users.length !== 0)
+          throw 'username already registered';
+        else
+          return insert(params);
       })
       .then(function(user) {
         deferred.resolve(user);
       })
       .catch(function(err) {
+        console.log(err.stack);
         deferred.reject(err);
       });
 
@@ -77,6 +86,7 @@ module.exports = function(conn) {
   function insert(params) {
     var deferred = Q.defer();
     var query = r.table('users').insert(params, { returnChanges: true });
+    console.log('you');
 
     query.run(conn, function(err, result) {
       if (err)

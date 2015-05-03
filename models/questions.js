@@ -6,12 +6,22 @@ var Database = require('../database/database');
 module.exports = function(conn) {
   return {
     all: all,
-    setup: setup,
-    insert: insert
+    initialize: initialize,
+    insert: insert,
+    sample: sample,
   };
 
-  function setup() {
+  function initialize() {
     return Database.containsOrCreateTable(conn, 'questions');
+  }
+
+  function sample(num) {
+    var defer = Q.defer();
+
+    num = num || 1;
+    r.table('questions').sample(num).run(conn, defer.makeNodeResolver());
+
+    return defer.promise;
   }
 
   function all() {

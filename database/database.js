@@ -1,30 +1,28 @@
 var Q = require('q');
 var r = require('rethinkdb');
 
-module.exports.setup = function(config) {
-  var deferred = Q.defer();
+module.exports.initialize = function(config) {
+  var containsOrCreate = function(containsDB) {
+    return r.branch(
+      containsDB,
+      { created: 0 },
+      r.dbCreate(config.db)
+    );
+  };
 
-  r.connect(config, function(err, conn) {
-    if (err)
-      return deferred.reject(new Error(err));
+  return Q.Promise(function(resolve) {
+    r.connect(config, function(err, conn) {
+      if (err) throw err;
 
-    r.dbList().contains(config.db)
-      .do(function(containsDB) {
-        return r.branch(
-          containsDB,
-          { created: 0 },
-          r.dbCreate(config.db)
-        );
-      })
-      .run(conn, function(err) {
-        if (err)
-          return deferred.reject(new Error(err));
+      r.dbList().contains(config.db)
+        .do(containsOrCreate)
+        .run(conn, function(err) {
+          if (err) throw err;
 
-        deferred.resolve(conn);
-      });
+          resolve(conn);
+        });
+    });
   });
-
-  return deferred.promise;
 };
 
 module.exports.containsOrCreateTable = function(conn, tableName) {

@@ -1,0 +1,35 @@
+{
+  "node": true,
+  "esnext": true,
+  "eqeqeq": false,
+  "bitwise": true,
+  "es5": false,
+  "esnext": true,
+  "camelcase": true,
+  "curly": false,
+  "eqeqeq": false,
+  "immed": true,
+  "indent": 2,
+  "latedef": false,
+  "newcap": false,
+  "noarg": true,
+  "quotmark": "single",
+  "regexp": true,
+  "undef": true,
+  "unused": true,
+  "strict": false,
+  "trailing": true,
+  "smarttabs": true,
+  "white": true,
+  "validthis": true,
+  "globals": {
+    /* MOCHA */
+    "describe"   : false,
+    "it"         : false,
+    "before"     : false,
+    "beforeEach" : false,
+    "after"      : false,
+    "afterEach"  : false,
+    "expect"     : false
+  }
+}

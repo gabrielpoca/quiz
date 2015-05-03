@@ -1,7 +1,8 @@
 var bodyParser = require('body-parser');
-var express = require('express');
+var express = require('express.io');
 var BasicStrategy = require('passport-http').BasicStrategy;
 var passport = require('passport');
+var cors = require('cors');
 
 var app = express();
 
@@ -19,14 +20,16 @@ passport.use(new BasicStrategy({}, function(username, password, done) {
       else
         throw 'you are not authorized';
     })
-    .catch(function(err) {
+    .catch(function() {
       done({ message: 'you are not authorized' });
     });
 }));
 
+app.use(cors());
 app.use(passport.initialize());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+app.http().io();
 
 app.post('/register', function(req, res) {
   UsersModel(req.app._rdbConn).insert(req.body)
@@ -93,11 +96,11 @@ app.use(handleError);
 
 module.exports = app;
 
-function handle404(req, res, next) {
+function handle404(req, res) {
   res.status(404).end('not found');
 }
 
-function handleError(err, req, res, next) {
+function handleError(err, req, res) {
   console.error(err.stack);
   res.status(500).json({err: err.message});
 }
