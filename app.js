@@ -8,7 +8,7 @@ var app = express();
 
 var UsersModel = require('./models/users');
 var QuestionsModel = require('./models/questions');
-var Game = require('./game');
+var AnswersModel = require('./models/answers');
 
 passport.use(new BasicStrategy({}, function(username, password, done) {
   var params = { username: username };
@@ -76,12 +76,14 @@ app.get('/questions/current',
 app.post('/answers',
   passport.authenticate('basic', { session: false }),
   function(req, res) {
-    Game.saveAnswer(
-      req.app._rdbConn,
-      req.user.id,
-      req.body.questionId,
-      req.body.answerId
-    )
+    var params = {
+      userId: req.user.id,
+      questionId: req.body.questionId,
+      answerId: req.body.answerId
+    };
+
+    AnswersModel(req.app._rdbConn)
+      .insertGameAnswer(params)
       .then(function(answer) {
         res.json(answer);
       })

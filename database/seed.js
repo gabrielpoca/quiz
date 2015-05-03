@@ -5,7 +5,7 @@ module.exports.run = function(conn) {
   var questionsList = [
     {
       body: 'Whoami?',
-      anserId: 1,
+      answerId: 1,
       answers: [
         {
           id: 1,
@@ -27,7 +27,7 @@ module.exports.run = function(conn) {
     },
     {
       body: 'Qual a capital de Portugal?',
-      anserId: 3,
+      answerId: 3,
       answers: [
         {
           id: 1,
@@ -49,7 +49,7 @@ module.exports.run = function(conn) {
     },
     {
       body: 'Qual a cor das mangas do colete branco de Napoleão?',
-      anserId: 3,
+      answerId: 3,
       answers: [
         {
           id: 1,

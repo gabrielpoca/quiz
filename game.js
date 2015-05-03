@@ -1,36 +1,65 @@
 var Q = require('q');
 var R = require('ramda');
+
 var AnswersModel = require('./models/answers');
+var QuestionsModel = require('./models/questions');
+var UsersModel = require('./models/users');
 
 var current;
 
-module.exports.nextQuestion = function(question) {
-  current = question;
-};
+module.exports = function(conn) {
+  var Answers = AnswersModel(conn);
+  var Questions = QuestionsModel(conn);
+  var Users = UsersModel(conn);
 
-module.exports.currentQuestion = function() {
-  return current;
-};
+  return Q.all([
+    Answers.initialize(),
+    Questions.initialize(),
+    Users.initialize(),
+  ]).thenj(function() {
+    return {
+      start: start
+    };
+  });
 
-module.exports.saveAnswer = function(conn, userId, questionId, answerId) {
-  if (!current)
-    return Q.reject('No question available');
+  function start() {
+    return Questions.sample()
+      .then(function(cursor) {
+        return cursor.next()
+          .then(setQuestion);
+      })
+      .then(function() {
+        setInterval(loop, 3000);
+      });
+  }
 
-  if (current.id !== questionId)
-    return Q.reject('anwer doesn\'t match question in game');
+  function loop() {
+    var question = currentQuestion();
 
-  var params = {
-    userId: userId,
-    answerId: answerId,
-    questionId: questionId
-  };
-
-  return AnswersModel(conn).findByParams(R.omit(['answerId'], params))
-    .then(function(answers) {
-      if (answers.length === 0) {
-        return AnswersModel(conn).insert(params);
-      } else {
-        return AnswersModel(conn).update(answers[0].id, params);
-      }
+    return answersForQuestion(question)
+      .tap(console.log)
+      .then(R.filter(R.eqProps('answerId', question.answerId)))
+      .then(function(winnerAnswers) {
+        console.log(R.pick(['userId'], winnerAnswers));
+        return Questions.sample()
+          .then(function(cursor) {
+            return cursor.next()
+              .then(setQuestion);
+          });
     });
+  }
+
+  function setQuestion(question) {
+    current = question;
+    console.log('current question', question);
+  }
+
+  function currentQuestion() {
+    return current;
+  }
+
+  function answersForQuestion(question) {
+    return AnswersModel(conn)
+      .findByParams({ questionId: question.id });
+  }
 };

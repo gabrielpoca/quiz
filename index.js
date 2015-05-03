@@ -22,14 +22,9 @@ var startExpress = function(conn) {
 };
 
 var startGame = function(conn) {
-  return QuestionsModel(conn).sample()
-    .then(function(cursor) {
-      return cursor.next()
-        .then(Game.nextQuestion);
-    })
-    .then(function() {
-      setInterval(gameLoop, 30000, conn);
-      return gameLoop(conn);
+  return Game(conn)
+    .then(function(game) {
+      game.start();
     });
 };
 
@@ -39,7 +34,7 @@ Database.initialize(config.rethinkdb)
   .tap(initializeModel(AnswersModel))
   .tap(Seed.run)
   .tap(startExpress)
-  .then(startGame)
+  .tap(startGame)
   .catch(function(err) {
     console.error(err);
     throw err;
@@ -49,24 +44,3 @@ process.on('uncaughtException', function(er) {
   console.error(er.stack);
   process.exit(1);
 });
-
-function gameLoop(conn) {
-  var question = Game.currentQuestion();
-
-    answersForQuestion(conn, question)
-      .tap(console.log)
-      .then(R.filter(R.eqProps('answerId', question.answerId)))
-      .then(function(winnerAnswers) {
-        console.log(winnerAnswers);
-        return QuestionsModel(conn).sample()
-          .then(function(cursor) {
-            return cursor.next()
-              .then(Game.nextQuestion);
-          });
-    });
-}
-
-function answersForQuestion(conn, question) {
-  return AnswersModel(conn)
-    .findByParams({ questionId: question.id });
-}

@@ -7,12 +7,24 @@ module.exports = function(conn) {
   return {
     initialize: initialize,
     insert: insert,
+    insertGameAnswer: insertGameAnswer,
     update: update,
     findByParams: findByParams,
   };
 
   function initialize() {
     return Database.containsOrCreateTable(conn, 'answers');
+  }
+
+  function insertGameAnswer(params) {
+    return findByParams(R.omit(['answerId'], params))
+      .then(function(answers) {
+        if (answers.length === 0) {
+          return insert(params);
+        } else {
+          return update(answers[0].id, params);
+        }
+      });
   }
 
   function insert(params) {
