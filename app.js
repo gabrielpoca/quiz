@@ -1,3 +1,4 @@
+var R = require('ramda');
 var bodyParser = require('body-parser');
 var fs = require('fs');
 var express = require('express.io');
@@ -18,14 +19,17 @@ module.exports = function(DB) {
     var params = { username: username };
 
     DB.Users.findByParams(params)
-      .then(function(users) {
-        if (users.length !== 0)
-          done(null, users[0]);
-        else
-          throw 'you are not authorized';
+      .then(R.head)
+      .then(function(user) {
+        if (!user) throw 'not authorized';
+
+        return DB.Utils.eqPasswords(password, user.password)
+          .then(function() {
+            return done(null, user);
+          });
       })
-      .catch(function() {
-        done({ message: 'you are not authorized' });
+      .catch(function(err) {
+        done(null, false, { message: 'You are not authorized' });
       });
   }));
 

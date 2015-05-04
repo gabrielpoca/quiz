@@ -100,17 +100,20 @@ module.exports = function(conn) {
   }
 
   function insert(params) {
-    var deferred = Q.defer();
-    var query = r.table('users').insert(params, { returnChanges: true });
-    console.log('you');
+    return utils.saltAndHash(params.password)
+      .then(function(hashedPassword) {
+        params.password = hashedPassword;
 
-    query.run(conn, function(err, result) {
-      if (err)
-        return deferred.reject(err);
+        var query = r.table('users')
+          .insert(params, { returnChanges: true });
 
-      deferred.resolve(result.changes[0].new_val);
-    });
+        return Q.Promise(function(resolve) {
+          query.run(conn, function(err, result) {
+            if (err) throw(err);
 
-    return deferred.promise;
+            resolve(result.changes[0].new_val);
+          });
+        });
+      });
   }
 };

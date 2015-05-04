@@ -25,6 +25,7 @@ module.exports = utils.containsOrCreateDatabase(config.rethinkdb)
         Answers: Answers,
         Questions: Questions,
         Users: Users,
+        Utils: utils
       };
     });
   });
