@@ -8,6 +8,8 @@ var AnswersModel = require('./models/answers');
 var QuestionsModel = require('./models/questions');
 var UsersModel = require('./models/users');
 
+config.rethinkdb.host = process.env.RETHINKDB_URL || config.rethinkdb.host;
+
 module.exports = utils.containsOrCreateDatabase(config.rethinkdb)
   .then(function(conn) {
     var Answers = AnswersModel(conn);
