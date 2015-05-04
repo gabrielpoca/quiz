@@ -1,8 +1,15 @@
 var bodyParser = require('body-parser');
+var fs = require('fs');
 var express = require('express.io');
+var morgan = require('morgan');
 var BasicStrategy = require('passport-http').BasicStrategy;
 var passport = require('passport');
 var cors = require('cors');
+
+var logDirectory = __dirname + '/log';
+fs.existsSync(logDirectory) || fs.mkdirSync(logDirectory);
+
+var accessLogStream = fs.createWriteStream(logDirectory + '/access.log', { flags: 'a' })
 
 module.exports = function(DB) {
   var app = express();
@@ -22,6 +29,7 @@ module.exports = function(DB) {
       });
   }));
 
+  app.use(morgan('tiny', { stream: accessLogStream }));
   app.use(cors());
   app.use(passport.initialize());
   app.use(bodyParser.json());
