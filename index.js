@@ -4,17 +4,15 @@ var App = require('./app');
 var Database = require('./database');
 var Game = require('./game');
 
-var startExpress = function(DB) {
-  App(DB).listen(config.express.port);
-  console.log('Listening on port ' + config.express.port);
-};
-
 var startGame = function(DB) {
-  return Game(DB).start();
+  var app = App(DB)
+  app.listen(config.express.port);
+  console.log('Listening on port ' + config.express.port);
+
+  return Game(app, DB).start();
 };
 
 Database
-  .tap(startExpress)
   .tap(startGame)
   .catch(function(err) {
     if (err.stack)

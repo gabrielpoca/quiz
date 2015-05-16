@@ -50,7 +50,8 @@ module.exports = function(DB) {
       });
   });
 
-  app.get('/me', passport.authenticate('basic', { session: false }),
+  app.get('/me',
+    passport.authenticate('basic', { session: false }),
     function(req, res) {
       res.json(req.user);
     }
@@ -59,7 +60,7 @@ module.exports = function(DB) {
   app.get('/users',
     passport.authenticate('basic', { session: false }),
     function(req, res) {
-      DB.Useres.all()
+      DB.Users.all()
         .then(function(users) {
           res.json(users);
         })

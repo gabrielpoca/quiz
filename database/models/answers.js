@@ -11,6 +11,7 @@ module.exports = function(conn) {
     insertGameAnswer: insertGameAnswer,
     update: update,
     findByParams: findByParams,
+    deleteAll: deleteAll,
   };
 
   function initialize() {
@@ -75,6 +76,19 @@ module.exports = function(conn) {
           throw err;
 
         resolve(result.changes[0].new_val);
+      });
+    });
+  }
+
+  function deleteAll() {
+    return Q.Promise(function(resolve) {
+      var query = r.table('answers').delete();
+
+      query.run(conn, function(err, result) {
+        if (err)
+          throw err;
+
+        resolve();
       });
     });
   }

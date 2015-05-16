@@ -1,8 +1,17 @@
 var Q = require('q');
 var R = require('ramda');
 
-module.exports = function(DB) {
+module.exports = function(App, DB) {
   var current;
+
+  DB.Users.newUser()
+    .then(function(cursor) {
+      cursor.each(function(err, changes) {
+        if (err) return;
+
+        broadcast('users:update', changes.new_val);
+      });
+    });
 
   return {
     start: start
@@ -13,7 +22,7 @@ module.exports = function(DB) {
       .then(nextQuestion)
       .then(setQuestion)
       .then(function() {
-        setInterval(loop, 3000);
+        setInterval(loop, 10000);
       });
   }
 
@@ -23,16 +32,19 @@ module.exports = function(DB) {
     return answersForQuestion(question)
       .then(R.filter(R.eqProps('answerId', question)))
       .then(R.map(R.path(['userId'])))
-      .then(R.map(DB.Users.incScore))
+      .tap(R.map(DB.Users.incScore))
       .then(function(winnerAnswers) {
+        broadcast('winners', winnerAnswers);
         return DB.Questions.sample()
           .then(nextQuestion)
-          .then(setQuestion);
+          .then(setQuestion)
+          .then(DB.Answers.deleteAll);
     });
   }
 
   function setQuestion(question) {
     current = question;
+    broadcast('question', question);
   }
 
   function currentQuestion() {
@@ -50,5 +62,9 @@ module.exports = function(DB) {
           cursor.next().then(resolve);
         });
     });
+  }
+
+  function broadcast(message, params) {
+    App.io.broadcast(message, params);
   }
 };
