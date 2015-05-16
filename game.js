@@ -4,12 +4,12 @@ var R = require('ramda');
 module.exports = function(App, DB) {
   var current;
 
-  DB.Users.newUser()
+  DB.Users.changes()
     .then(function(cursor) {
-      cursor.each(function(err, changes) {
+      cursor.each(function(err, user) {
         if (err) return;
 
-        broadcast('users:update', changes.new_val);
+        DB.Broadcast.publish('users:update', user);
       });
     });
 
@@ -22,7 +22,7 @@ module.exports = function(App, DB) {
       .then(nextQuestion)
       .then(setQuestion)
       .then(function() {
-        setInterval(loop, 10000);
+        setInterval(loop, 15000);
       });
   }
 
@@ -34,7 +34,7 @@ module.exports = function(App, DB) {
       .then(R.map(R.path(['userId'])))
       .tap(R.map(DB.Users.incScore))
       .then(function(winnerAnswers) {
-        broadcast('winners', winnerAnswers);
+        DB.Broadcast.publish('game:winners', winnerAnswers);
         return DB.Questions.sample()
           .then(nextQuestion)
           .then(setQuestion)
@@ -44,7 +44,7 @@ module.exports = function(App, DB) {
 
   function setQuestion(question) {
     current = question;
-    broadcast('question', question);
+    DB.Broadcast.publish('game:question', question);
   }
 
   function currentQuestion() {
@@ -62,9 +62,5 @@ module.exports = function(App, DB) {
           cursor.next().then(resolve);
         });
     });
-  }
-
-  function broadcast(message, params) {
-    App.io.broadcast(message, params);
   }
 };

@@ -6,7 +6,7 @@ var utils = require('../utils');
 
 module.exports = function(conn) {
   return {
-    newUser: newUser,
+    changes: changes,
     all: all,
     findByParams: findByParams,
     initialize: initialize,
@@ -19,8 +19,8 @@ module.exports = function(conn) {
     return utils.containsOrCreateTable(conn, 'users');
   }
 
-  function newUser() {
-    var query = r.table('users').changes();
+  function changes() {
+    var query = r.table('users').changes()('new_val');
     return Q.ninvoke(query, 'run', conn);
   }
 

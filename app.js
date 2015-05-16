@@ -15,6 +15,12 @@ var accessLogStream = fs.createWriteStream(logDirectory + '/access.log', { flags
 module.exports = function(DB) {
   var app = express();
 
+  DB.Broadcast.subscribe(function(cursor) {
+    cursor.each(function(err, object) {
+      app.io.broadcast(object.topic, object.args);
+    });
+  });
+
   passport.use(new BasicStrategy({}, function(username, password, done) {
     var params = { username: username };
 
