@@ -113,7 +113,6 @@ module.exports = function(DB) {
 
   DB.Broadcast.subscribe(function(cursor) {
     cursor.each(function(err, object) {
-      console.log(object);
       app.io.broadcast(object.topic, object.args);
     });
   });

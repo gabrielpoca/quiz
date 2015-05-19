@@ -20,7 +20,7 @@ module.exports = function(DB) {
       .then(R.filter(R.eqProps('answerId', currentQuestion)))
       .then(R.map(R.path(['userId'])))
       .tap(R.map(DB.Users.incScore))
-      .then(broadcastWinners)
+      .then(R.curry(broadcastWinners)(currentQuestion))
       .then(nextQuestion);
   }
 
@@ -32,7 +32,7 @@ module.exports = function(DB) {
 
   function setQuestion(question) {
     currentQuestion = question;
-    DB.Broadcast.publish('game:question', question);
+    DB.Broadcast.publish('game:question', R.omit(['answerId'], question));
   }
 
   function answersForQuestion(question) {
@@ -41,8 +41,11 @@ module.exports = function(DB) {
     });
   }
 
-  function broadcastWinners(winners) {
-    return DB.Broadcast.publish('game:winners', winners);
+  function broadcastWinners(question, winners) {
+    return DB.Broadcast.publish('game:result', {
+      question: question,
+      winners: winners
+    });
   }
 
   function retrieveQuestion() {
