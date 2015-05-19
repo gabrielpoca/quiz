@@ -9,25 +9,25 @@ module.exports = function(DB) {
   };
 
   function start() {
-    return retrieveQuestion()
-      .then(setQuestion)
+    return nextQuestion()
       .then(function() {
-        setInterval(loop, 15000);
+        setInterval(gameLoop, 10000)
       });
   }
 
-  function loop() {
+  function gameLoop() {
     return answersForQuestion(currentQuestion)
       .then(R.filter(R.eqProps('answerId', currentQuestion)))
       .then(R.map(R.path(['userId'])))
       .tap(R.map(DB.Users.incScore))
-      .then(function(winnerAnswers) {
-        DB.Broadcast.publish('game:winners', winnerAnswers);
-        return DB.Questions.sample()
-          .then(retrieveQuestion)
-          .then(setQuestion)
-          .then(DB.Answers.deleteAll);
-    });
+      .then(broadcastWinners)
+      .then(nextQuestion);
+  }
+
+  function nextQuestion() {
+    return retrieveQuestion()
+      .then(setQuestion)
+      .then(DB.Answers.deleteAll);
   }
 
   function setQuestion(question) {
@@ -36,7 +36,13 @@ module.exports = function(DB) {
   }
 
   function answersForQuestion(question) {
-    return DB.Answers.findByParams({ questionId: question.id });
+    return DB.Answers.findByParams({
+      questionId: question.id
+    });
+  }
+
+  function broadcastWinners(winners) {
+    return DB.Broadcast.publish('game:winners', winners);
   }
 
   function retrieveQuestion() {
