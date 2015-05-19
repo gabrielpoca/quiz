@@ -9,7 +9,7 @@ var startGame = function(DB) {
   app.listen(config.express.port);
   console.log('Listening on port ' + config.express.port);
 
-  return Game(app, DB).start();
+  return Game(DB).start();
 };
 
 Database

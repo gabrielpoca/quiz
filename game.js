@@ -1,25 +1,15 @@
 var Q = require('q');
 var R = require('ramda');
 
-module.exports = function(App, DB) {
-  var current;
-
-  DB.Users.changes()
-    .then(function(cursor) {
-      cursor.each(function(err, user) {
-        if (err) return;
-
-        DB.Broadcast.publish('users:update', user);
-      });
-    });
+module.exports = function(DB) {
+  var currentQuestion;
 
   return {
     start: start
   };
 
   function start() {
-    return DB.Questions.sample()
-      .then(nextQuestion)
+    return retrieveQuestion()
       .then(setQuestion)
       .then(function() {
         setInterval(loop, 15000);
@@ -27,35 +17,29 @@ module.exports = function(App, DB) {
   }
 
   function loop() {
-    var question = currentQuestion();
-
-    return answersForQuestion(question)
-      .then(R.filter(R.eqProps('answerId', question)))
+    return answersForQuestion(currentQuestion)
+      .then(R.filter(R.eqProps('answerId', currentQuestion)))
       .then(R.map(R.path(['userId'])))
       .tap(R.map(DB.Users.incScore))
       .then(function(winnerAnswers) {
         DB.Broadcast.publish('game:winners', winnerAnswers);
         return DB.Questions.sample()
-          .then(nextQuestion)
+          .then(retrieveQuestion)
           .then(setQuestion)
           .then(DB.Answers.deleteAll);
     });
   }
 
   function setQuestion(question) {
-    current = question;
+    currentQuestion = question;
     DB.Broadcast.publish('game:question', question);
-  }
-
-  function currentQuestion() {
-    return current;
   }
 
   function answersForQuestion(question) {
     return DB.Answers.findByParams({ questionId: question.id });
   }
 
-  function nextQuestion() {
+  function retrieveQuestion() {
     return Q.Promise(function(resolve) {
       DB.Questions.sample()
         .then(function(cursor) {

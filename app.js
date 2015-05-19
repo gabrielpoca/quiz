@@ -15,12 +15,6 @@ var accessLogStream = fs.createWriteStream(logDirectory + '/access.log', { flags
 module.exports = function(DB) {
   var app = express();
 
-  DB.Broadcast.subscribe(function(cursor) {
-    cursor.each(function(err, object) {
-      app.io.broadcast(object.topic, object.args);
-    });
-  });
-
   passport.use(new BasicStrategy({}, function(username, password, done) {
     var params = { username: username };
 
@@ -115,6 +109,20 @@ module.exports = function(DB) {
   app.use(function handleError(err, req, res) {
     console.error(err.stack);
     res.status(500).json({err: err.message});
+  });
+
+  DB.Broadcast.subscribe(function(cursor) {
+    cursor.each(function(err, object) {
+      app.io.broadcast(object.topic, object.args);
+    });
+  });
+
+  DB.Users.changes().then(function(cursor) {
+    cursor.each(function(err, user) {
+      if (err) return;
+
+      app.io.broadcast('users:update', user);
+    });
   });
 
   return app;
