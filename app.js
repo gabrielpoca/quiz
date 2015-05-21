@@ -70,19 +70,6 @@ module.exports = function(DB) {
     }
   );
 
-  app.get('/questions/current',
-    passport.authenticate('basic', { session: false }),
-    function(req, res) {
-      DB.Questions.all()
-        .then(function(questions) {
-          res.json(questions[0]);
-        })
-        .catch(function(err) {
-          res.status(500).json({ message: err });
-        });
-    }
-  );
-
   app.post('/answers',
     passport.authenticate('basic', { session: false }),
     function(req, res) {
