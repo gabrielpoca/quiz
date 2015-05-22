@@ -53,7 +53,7 @@ module.exports = function(conn) {
     var query = r.table('users')
       .get(userId)
       .update({
-        score: r.row('score').add(1).default(0)
+        score: r.row('score').add(1).default(1)
       });
 
     query.run(conn, deferred.makeNodeResolver());
