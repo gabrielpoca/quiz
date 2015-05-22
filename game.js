@@ -42,10 +42,7 @@ module.exports = function(DB) {
   }
 
   function broadcastWinners(question, winners) {
-    return DB.Broadcast.publish('game:result', {
-      question: question,
-      winners: winners
-    });
+    return DB.Broadcast.publish('game:winners', winners);
   }
 
   function retrieveQuestion() {

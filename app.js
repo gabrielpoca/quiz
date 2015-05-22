@@ -1,19 +1,23 @@
 var R = require('ramda');
 var bodyParser = require('body-parser');
 var fs = require('fs');
-var express = require('express.io');
+var express = require('express');
 var morgan = require('morgan');
 var BasicStrategy = require('passport-http').BasicStrategy;
 var passport = require('passport');
 var cors = require('cors');
+var socketIO = require('socket.io');
+var http = require('http');
 
 var logDirectory = __dirname + '/log';
 fs.existsSync(logDirectory) || fs.mkdirSync(logDirectory);
 
 var accessLogStream = fs.createWriteStream(logDirectory + '/access.log', { flags: 'a' })
 
-module.exports = function(DB) {
+module.exports = function(DB, PORT) {
   var app = express();
+  var server = http.Server(app);
+  var io = socketIO(server);
 
   passport.use(new BasicStrategy({}, function(username, password, done) {
     var params = { username: username };
@@ -38,7 +42,6 @@ module.exports = function(DB) {
   app.use(passport.initialize());
   app.use(bodyParser.json());
   app.use(bodyParser.urlencoded({ extended: true }));
-  app.http().io();
 
   app.post('/register', function(req, res) {
     DB.Users.insert(req.body)
@@ -100,7 +103,7 @@ module.exports = function(DB) {
 
   DB.Broadcast.subscribe(function(cursor) {
     cursor.each(function(err, object) {
-      app.io.broadcast(object.topic, object.args);
+      io.emit(object.topic, object.args);
     });
   });
 
@@ -108,9 +111,11 @@ module.exports = function(DB) {
     cursor.each(function(err, user) {
       if (err) return;
 
-      app.io.broadcast('users:update', user);
+      io.emit('users:update', user);
     });
   });
+
+  server.listen(PORT);
 
   return app;
 };

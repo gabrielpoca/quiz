@@ -5,8 +5,7 @@ var Database = require('./database');
 var Game = require('./game');
 
 var startGame = function(DB) {
-  var app = App(DB)
-  app.listen(config.express.port);
+  var app = App(DB, config.express.port)
   console.log('Listening on port ' + config.express.port);
 
   return Game(DB).start();
