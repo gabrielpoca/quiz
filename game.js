@@ -12,8 +12,7 @@ module.exports = function(DB) {
   };
 
   function start() {
-    return nextQuestion()
-      .then(gameLoop);
+    return waitLoop();
   }
 
   function gameLoop() {
