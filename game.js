@@ -1,8 +1,8 @@
 var Q = require('q');
 var R = require('ramda');
 
-var gameTime = 10000;
-var waitTime = 5000;
+var gameTime = 7000;
+var waitTime = 3000;
 
 module.exports = function(DB) {
   var currentQuestion;
