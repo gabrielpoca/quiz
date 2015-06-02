@@ -4,6 +4,8 @@ var R = require('ramda');
 
 var utils = require('../utils');
 
+var TABLE = 'questions';
+
 module.exports = function(conn) {
   return {
     all: all,
@@ -13,7 +15,7 @@ module.exports = function(conn) {
   };
 
   function initialize() {
-    return utils.containsOrCreateTable(conn, 'questions');
+    return utils.containsOrCreateTable(conn, TABLE);
   }
 
   function sample(num) {
@@ -28,7 +30,7 @@ module.exports = function(conn) {
 
   function all() {
     return Q.Promise(function(resolve) {
-      r.table('questions').run(conn, function(err, cursor) {
+      r.table(TABLE).run(conn, function(err, cursor) {
         if (err) throw err;
 
         cursor.toArray(function(err, questions) {
@@ -44,7 +46,7 @@ module.exports = function(conn) {
     params = R.pick(['body', 'answerId', 'answers'], params);
 
     return Q.Promise(function(resolve) {
-      var query = r.table('questions').insert(params, { returnChanges: true });
+      var query = r.table(TABLE).insert(params, { returnChanges: true });
 
       query.run(conn, function(err, result) {
         if (err)
