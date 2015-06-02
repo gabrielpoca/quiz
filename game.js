@@ -1,6 +1,9 @@
 var Q = require('q');
 var R = require('ramda');
 
+var gameTime = 10000;
+var waitTime = 5000;
+
 module.exports = function(DB) {
   var currentQuestion;
 
@@ -10,9 +13,7 @@ module.exports = function(DB) {
 
   function start() {
     return nextQuestion()
-      .then(function() {
-        setInterval(gameLoop, 10000)
-      });
+      .then(gameLoop);
   }
 
   function gameLoop() {
@@ -21,7 +22,14 @@ module.exports = function(DB) {
       .then(R.map(R.path(['userId'])))
       .tap(R.map(DB.Users.incScore))
       .then(R.curry(broadcastWinners)(currentQuestion))
-      .then(nextQuestion);
+      .then(waitLoop);
+  }
+
+  function waitLoop() {
+    setTimeout(function() {
+      nextQuestion();
+      setTimeout(gameLoop, gameTime);
+    }, waitTime);
   }
 
   function nextQuestion() {
